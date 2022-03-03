@@ -1,15 +1,35 @@
 ## Buildstage ##
-FROM ghcr.io/linuxserver/baseimage-alpine:3.12 as buildstage
+FROM ghcr.io/linuxserver/baseimage-ubuntu:focal as buildstage
 
+# Build and install ffmpeg with QSV support
 RUN \
- echo "**** install packages ****" && \
- apk add --no-cache \
-	curl && \
- echo "**** grab rclone ****" && \
- mkdir -p /root-layer && \
- curl -o \
-	/root-layer/rclone.deb -L \
-	"https://downloads.rclone.org/v1.47.0/rclone-v1.47.0-linux-amd64.deb"
+  apt update && apt install -y git libopus-dev libmp3lame-dev libfdk-aac-dev libvpx-dev libx264-dev libx265-dev yasm libass-dev \
+  libtheora-dev libvorbis-dev mercurial cmake build-essential libva-dev libmfx-dev intel-media-va-driver-non-free libaom-dev libnuma-dev && \
+  git clone https://github.com/ffmpeg/ffmpeg && cd ffmpeg && \
+  git checkout n5.0 && \
+ ./configure \
+  --prefix=/root-layer \
+  --extra-libs="-lpthread -lm" \
+  --pkg-config-flags="--static" \
+  --disable-debug \
+  --enable-static \
+  --enable-gpl \
+  --enable-libaom \
+  --enable-libass \
+  --enable-libfdk-aac \
+  --enable-libfreetype \
+  --enable-libmp3lame \
+  --enable-libopus \
+  --enable-libvorbis \
+  --enable-libvpx \
+  --enable-libx264 \
+  --enable-libx265 \
+  --enable-nonfree \
+  --enable-vaapi \
+  --enable-libmfx \
+  --enable-version3 && \
+  make && make install
+
 
 # copy local files
 COPY root/ /root-layer/
